@@ -14,9 +14,33 @@ class DOMHelper {
     }
 }
 
-class Tooltip {}
+class Tooltip {
+    constructor(closeNotifierFunction) {
+        this.closeNotifier = closeNotifierFunction;
+    }
+
+    attach() {
+        const tooltipElement = document.createElement('div');
+        tooltipElement.className = 'card';
+        tooltipElement.textContent = 'TEST!!!';
+        tooltipElement.addEventListener('click', this.closeTooltip);
+        this.element = tooltipElement;
+        document.body.append(tooltipElement);
+    }
+
+    detach() {
+        this.element.remove();
+    }
+
+    closeTooltip = () => {
+        this.detach();
+        this.closeNotifier();
+    }
+}
 
 class ProjectItem {
+    hasActiveTooltip = false;
+
     constructor(id, updateProjectListsFunction, type) {
         this.id = id;
         this.updateProjectListsHandler = updateProjectListsFunction;
@@ -25,8 +49,19 @@ class ProjectItem {
         this.connectSwitchButton(type);
     }
 
-    connectMoreInfoButton() {
+    showMoreInfoHandler() {
+        if (this.hasActiveTooltip) return;
 
+        const tooltip = new Tooltip(() => { this.hasActiveTooltip = false; });
+        tooltip.attach();
+        this.hasActiveTooltip = true;
+    }
+
+    connectMoreInfoButton() {
+        const projectItemElement = document.getElementById(this.id);
+        const moreInfoBtn = projectItemElement.querySelector('button:first-of-type');
+
+        moreInfoBtn.addEventListener('click', this.showMoreInfoHandler);
     }
 
     connectSwitchButton(type) {
@@ -34,7 +69,6 @@ class ProjectItem {
         let switchBtn = projectItemElement.querySelector('button:last-of-type');
 
         switchBtn = DOMHelper.clearEventListeners(switchBtn);
-        console.log(type);
         switchBtn.textContent = type === 'active' ? 'Finish' : 'Activate';
         switchBtn.addEventListener('click', this.updateProjectListsHandler.bind(null, this.id));
     }
